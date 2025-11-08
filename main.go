@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	hell_divers "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
