@@ -34,12 +34,14 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push
+    - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/demobot:latest
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/demobot:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/demobot:${{ github.sha }}
 
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
