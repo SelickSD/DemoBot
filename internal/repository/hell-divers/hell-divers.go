@@ -29,6 +29,7 @@ func GetNews() ([]NewsFeed, error) {
 
 	req.Header.Add("X-Super-Client", "@SuperDemocracyBot")
 	req.Header.Add("X-Super-Contact", "selicksd@gmail.com")
+	req.Header.Add("Accept-Language", "ru-RU")
 
 	maxRetries := 5
 	retryDelay := time.Second
