@@ -28,7 +28,8 @@ jobs:
       run: go test -v ./...
     
     - name: Build and Push Docker Image
-      uses: mr-smithers-exellent/docker-build-push@v4
+      uses: mr-smithers-excellent/docker-build-push@v6
+      with:
         Image: selicksd/selicksd
         registry: docker.io
         username: ${{ secrets.DOCKER_USERNAME }}
