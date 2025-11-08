@@ -56,7 +56,7 @@ func GetNews() ([]NewsFeed, error) {
 
 		if resp.StatusCode != http.StatusOK {
 			fmt.Printf("Ошибка: статус %d\nОтвет: %s\n", resp.StatusCode, string(body))
-			return nil, fmt.Errorf(string(body))
+			return nil, fmt.Errorf("Status Error")
 		}
 
 		err = json.Unmarshal(body, &response)
