@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"regexp"
+	"strings"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	hell_divers "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
@@ -54,13 +54,9 @@ func createMassages(news []hell_divers.NewsFeed) string {
 	count := len(news)
 	if news[count-1].Message != "" {
 		
-		// Заменяем <i=1>
-		re1 := regexp.MustCompile(`<i=1>(.*?)</i>`)
-		text := re1.ReplaceAllString(news[count-1].Message, "**$1**")
-
-		// Заменяем <i=3>
-		re3 := regexp.MustCompile(`<i=3>(.*?)</i>`)
-		result := re3.ReplaceAllString(text, "**$1**")
+		result := strings.Replace(news[count-1].Message, "<i=1>", "**", -1)  
+		result = strings.Replace(result, "</i>", "**", -1)
+		result = strings.Replace(result, "<i=3>", "**", -1)   
 
 		return result
 	}
