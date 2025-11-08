@@ -1,5 +1,5 @@
 # Стадия сборки
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Устанавливаем зависимости для сборки
 RUN apk add --no-cache git
