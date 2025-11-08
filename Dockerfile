@@ -33,11 +33,9 @@ WORKDIR /app
 # Копируем бинарник из стадии сборки
 COPY --from=builder /app/bot .
 
-# Меняем владельца файлов
-RUN chown -R app:app /app
-
-# Переключаемся на непривилегированного пользователя
-USER app
+# Объявляем переменные окружения
+ENV BOT_TOKEN=""
+ENV DEBUG="false"
 
 # Команда запуска
 CMD ["./bot"]
