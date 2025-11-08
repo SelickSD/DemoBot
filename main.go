@@ -53,9 +53,14 @@ func main() {
 func createMassages(news []hell_divers.NewsFeed) string {
 	count := len(news)
 	if news[count-1].Message != "" {
+		
+		// Заменяем <i=1>
+		re1 := regexp.MustCompile(`<i=1>(.*?)</i>`)
+		text := re1.ReplaceAllString(news[count-1].Message, "**$1**")
 
-		re := regexp.MustCompile(`<i=\d+>(.*?)</i>`)
-		result := re.ReplaceAllString(news[count-1].Message, "**$1**")
+		// Заменяем <i=3>
+		re3 := regexp.MustCompile(`<i=3>(.*?)</i>`)
+		result := re3.ReplaceAllString(text, "**$1**")
 
 		return result
 	}
