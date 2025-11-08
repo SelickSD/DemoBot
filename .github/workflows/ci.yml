@@ -50,10 +50,10 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-          # Логинимся в Docker Hub на сервере
+          # Логинимся в Docker Hub на сервере (БЕЗ sudo)
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-          # Деплой приложения
+          # Деплой приложения (БЕЗ sudo - все команды от имени deployer)
           docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
           docker stop demobot || true
           docker rm demobot || true
@@ -62,4 +62,4 @@ jobs:
             --restart unless-stopped \
             -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
             -e DEBUG="false" \
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest  
