@@ -40,8 +40,8 @@ jobs:
         context: .
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/demobot:latest
-          ${{ secrets.DOCKERHUB_USERNAME }}/demobot:${{ github.sha }}
+          ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
+          ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ github.sha }}
 
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
@@ -51,9 +51,10 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
           # Логинимся в Docker Hub на сервере
-          echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/demobot:latest
+          # Деплой приложения
+          docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
           docker stop demobot || true
           docker rm demobot || true
           docker run -d \
@@ -61,4 +62,4 @@ jobs:
             --restart unless-stopped \
             -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
             -e DEBUG="false" \
-            ${{ secrets.DOCKERHUB_USERNAME }}/demobot:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
