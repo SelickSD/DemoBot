@@ -54,9 +54,9 @@ func createMassages(news []hell_divers.NewsFeed) string {
 	count := len(news)
 	if news[count-1].Message != "" {
 		
-		result := strings.Replace(news[count-1].Message, "<i=1>", "**", -1)  
-		result = strings.Replace(result, "</i>", "**", -1)
-		result = strings.Replace(result, "<i=3>", "**", -1)   
+		result := strings.Replace(news[count-1].Message, "<i=1>", "", -1)  
+		result = strings.Replace(result, "</i>", "", -1)
+		result = strings.Replace(result, "<i=3>", "", -1)   
 
 		return result
 	}
