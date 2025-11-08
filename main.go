@@ -10,21 +10,16 @@ import (
 )
 
 func main() {
+	 // Загружаем конфиг из переменных окружения
+    cfg := config.Load()
 
-	//cfg, err := config.LoadConfig(".cicd/deploy/helm-envs/config.yaml")
-	//if err != nil {
-	//	log.Fatalf("Ошибка загрузки конфига: %v", err)
-	//}
+    bot, err := tgbotapi.NewBotAPI(cfg.BotToken)
+    if err != nil {
+        log.Panic(err)
+    }
 
-	// fmt.Println("test")
-	
-	bot, err := tgbotapi.NewBotAPI(config.Bot_token)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	bot.Debug = cfg.Debug
+    log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	// Удаляем активный webhook
 	_, err = bot.Request(tgbotapi.DeleteWebhookConfig{})
