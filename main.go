@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	hell_divers "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
@@ -52,7 +53,12 @@ func main() {
 func createMassages(news []hell_divers.NewsFeed) string {
 	count := len(news)
 	if news[count-1].Message != "" {
-		return news[count-1].Message
+		
+		result := strings.Replace(news[count-1].Message, "<i=1>", "", -1)  
+		result = strings.Replace(result, "</i>", "", -1)
+		result = strings.Replace(result, "<i=3>", "", -1)   
+
+		return result
 	}
 	return ""
 }
