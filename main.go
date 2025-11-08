@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	hell_divers "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
-	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -14,6 +16,8 @@ func main() {
 	//if err != nil {
 	//	log.Fatalf("Ошибка загрузки конфига: %v", err)
 	//}
+
+	// fmt.Println("test")
 	
 	bot, err := tgbotapi.NewBotAPI(config.Bot_token)
 	if err != nil {
