@@ -8,6 +8,8 @@ import (
 type Config struct {
     BotToken string
     Debug    bool
+	ConfigEmail string
+	BotName string
     // Другие параметры...
 }
 
@@ -17,9 +19,21 @@ func Load() *Config {
         log.Fatal("BOT_TOKEN environment variable is required")
     }
 
+	configEmail := getEnv("CONFIG_EMAIL", "")
+    if botToken == "" {
+        log.Fatal("CONFIG_EMAIL environment variable is required")
+    }
+
+	botName := getEnv("BOT_NAME", "")
+    if botToken == "" {
+        log.Fatal("BOT_NAME environment variable is required")
+    }
+
     return &Config{
         BotToken: botToken,
         Debug:    getEnv("DEBUG", "false") == "true",
+		ConfigEmail: configEmail,
+		BotName: botName,
     }
 }
 

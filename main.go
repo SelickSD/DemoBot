@@ -37,7 +37,7 @@ func main() {
 		if update.Message != nil && update.Message.Text == "За демократию!" {
 			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-			news, err := hell_divers.GetNews()
+			news, err := hell_divers.GetNews(*cfg)
 			if err != nil {
 				log.Panic(err)
 			}

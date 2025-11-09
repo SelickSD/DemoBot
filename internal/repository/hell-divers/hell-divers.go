@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/SelickSD/DemoBot.git/internal/config"
 )
 
 type NewsFeed struct {
@@ -15,7 +17,7 @@ type NewsFeed struct {
 	Message   string `json:"message"`
 }
 
-func GetNews() ([]NewsFeed, error) {
+func GetNews(config config.Config) ([]NewsFeed, error) {
 	baseURL := "https://api.helldivers2.dev/raw/api/NewsFeed/801"
 
 	client := &http.Client{}
@@ -27,8 +29,8 @@ func GetNews() ([]NewsFeed, error) {
 		return nil, err
 	}
 
-	req.Header.Add("X-Super-Client", "@SuperDemocracyBot")
-	req.Header.Add("X-Super-Contact", "selicksd@gmail.com")
+	req.Header.Add("X-Super-Client", config.BotName)
+	req.Header.Add("X-Super-Contact", config.ConfigEmail)
 	req.Header.Add("Accept-Language", "ru-RU")
 
 	maxRetries := 5
