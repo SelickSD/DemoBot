@@ -34,20 +34,19 @@ func main() {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message != nil {
-			if update.Message.Text == "За демократию!" || update.Message.Text == "За Супер Землю!" {
-				log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		if update.Message != nil && update.Message.Text == "За демократию!" {
 
-				news, err := hell_divers.GetNews(*cfg)
-				if err != nil {
-					log.Panic(err)
-				}
+			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, createMassages(news))
-				msg.ReplyToMessageID = update.Message.MessageID
-
-				bot.Send(msg)
+			news, err := hell_divers.GetNews(*cfg)
+			if err != nil {
+				log.Panic(err)
 			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, createMassages(news))
+			msg.ReplyToMessageID = update.Message.MessageID
+
+			bot.Send(msg)
 		}
 	}
 }
