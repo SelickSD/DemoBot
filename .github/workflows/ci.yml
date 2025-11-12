@@ -61,5 +61,7 @@ jobs:
             --name demobot \
             --restart unless-stopped \
             -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
+            -e BOT_NAME="${{ secrets.BOT_NAME }}" \
+            -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \  
             -e DEBUG="false" \
             ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest  

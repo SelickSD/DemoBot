@@ -33,9 +33,9 @@ WORKDIR /app
 # Копируем бинарник из стадии сборки
 COPY --from=builder /app/bot .
 
-# Объявляем переменные окружения
-ENV BOT_TOKEN=""
-ENV DEBUG="false"
+## Объявляем переменные окружения
+#ENV BOT_TOKEN=""
+#ENV DEBUG="false"
 
 # Команда запуска
 CMD ["./bot"]

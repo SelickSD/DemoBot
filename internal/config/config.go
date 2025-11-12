@@ -9,8 +9,8 @@ import (
 )
 
 type BotConfig struct {
-	BotToken string `envconfig:"BOT_TOKEN" required:"true"`
-	BotName  string `envconfig:"BOT_NAME" required:"true"`
+	Token string `envconfig:"TOKEN" required:"true"`
+	Name  string `envconfig:"NAME" required:"true"`
 }
 
 type Config struct {
@@ -20,14 +20,21 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	// Подгружаем .env только если есть (для локальной разработки)
 	if err := godotenv.Load(); err != nil {
-		log.Printf("⚠️  .env file not found, using system environment variables")
+		log.Println("⚠️ .env file not found, using system environment variables")
 	}
 
 	cfg := new(Config)
 
+	// Основные переменные
 	if err := envconfig.Process("", cfg); err != nil {
-		return nil, fmt.Errorf("error while parse env config | %w", err)
+		return nil, fmt.Errorf("failed to load base config: %w", err)
+	}
+
+	// Переменные, начинающиеся с BOT_
+	if err := envconfig.Process("BOT", &cfg.Bot); err != nil {
+		return nil, fmt.Errorf("failed to load bot config: %w", err)
 	}
 
 	return cfg, nil
