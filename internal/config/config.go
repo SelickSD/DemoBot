@@ -1,8 +1,10 @@
 package config
 
 import (
-	"log"
 	"os"
+
+	"github.com/SelickSD/DemoBot.git/internal/logger"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -10,24 +12,33 @@ type Config struct {
 	Debug       bool
 	ConfigEmail string
 	BotName     string
-	// Другие параметры
 }
 
 func Load() *Config {
+	// Инициализируем логгер
+	logger.Init()
+
+	// Загружаем .env файл (игнорируем ошибку если файла нет)
+	// Это для локальной разработки, на проде используем переменные окружения
+	_ = godotenv.Load()
+
 	botToken := getEnv("BOT_TOKEN", "")
 	if botToken == "" {
-		log.Fatal("BOT_TOKEN environment variable is required")
+		logger.Error.Fatal("BOT_TOKEN environment variable is required")
 	}
 
 	configEmail := getEnv("CONFIG_EMAIL", "")
-	if botToken == "" {
-		log.Fatal("CONFIG_EMAIL environment variable is required")
+	if configEmail == "" {
+		logger.Error.Fatal("CONFIG_EMAIL environment variable is required")
 	}
 
 	botName := getEnv("BOT_NAME", "")
-	if botToken == "" {
-		log.Fatal("BOT_NAME environment variable is required")
+	if botName == "" {
+		logger.Error.Fatal("BOT_NAME environment variable is required")
 	}
+
+	logger.Info.Printf("Bot configured with name: %s", botName)
+	logger.Info.Printf("Debug mode: %t", getEnv("DEBUG", "false") == "true")
 
 	return &Config{
 		BotToken:    botToken,

@@ -2,7 +2,10 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	hell_divers "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
@@ -10,56 +13,139 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+type Bot struct {
+	cfg    *config.Config
+	botAPI *tgbotapi.BotAPI
+}
+
 func main() {
 	// Загружаем конфиг из переменных окружения
 	cfg := config.Load()
+
+	log.Printf("🚀 Starting DemoBot...")
+	log.Printf("📝 Bot Name: %s", cfg.BotName)
+	log.Printf("🔧 Debug Mode: %t", cfg.Debug)
+	log.Printf("📧 Config Email: %s", cfg.ConfigEmail)
 
 	bot, err := tgbotapi.NewBotAPI(cfg.BotToken)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	bot.Debug = cfg.Debug
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	demobot := &Bot{
+		cfg:    cfg,
+		botAPI: bot,
+	}
+
+	demobot.botAPI.Debug = cfg.Debug
+	log.Printf("Authorized on account %s", demobot.botAPI.Self.UserName)
 
 	// Удаляем активный webhook
-	_, err = bot.Request(tgbotapi.DeleteWebhookConfig{})
+	_, err = demobot.botAPI.Request(tgbotapi.DeleteWebhookConfig{})
 	if err != nil {
 		log.Panic("failed to delete webhook:", err)
 	}
 
+	// Обработка graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go demobot.start()
+
+	<-sigChan
+	log.Println("Shutting down bot...")
+}
+
+func (b *Bot) start() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
+	updates := b.botAPI.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message != nil && update.Message.Text == "За демократию!" {
+		go b.handleUpdate(update)
+	}
+}
 
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+func (b *Bot) handleUpdate(update tgbotapi.Update) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in handleUpdate: %v", r)
+		}
+	}()
 
-			news, err := hell_divers.GetNews(*cfg)
-			if err != nil {
-				log.Panic(err)
-			}
+	if update.Message == nil {
+		return
+	}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, createMassages(news))
-			msg.ReplyToMessageID = update.Message.MessageID
+	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-			bot.Send(msg)
+	var response string
+	var err error
+
+	switch strings.ToLower(update.Message.Text) {
+	case "за демократию!", "/democracy":
+		response, err = b.handleDemocracyCommand()
+	case "/start", "/help":
+		response = b.handleHelpCommand()
+	default:
+		break
+	}
+
+	if err != nil {
+		log.Printf("Error handling command: %v", err)
+		response = "Произошла ошибка при обработке запроса. Попробуйте позже."
+	}
+
+	if response != "" {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, response)
+		msg.ReplyToMessageID = update.Message.MessageID
+
+		if _, err := b.botAPI.Send(msg); err != nil {
+			log.Printf("Error sending message: %v", err)
 		}
 	}
 }
 
-func createMassages(news []hell_divers.NewsFeed) string {
-	count := len(news)
-	if news[count-1].Message != "" {
-
-		result := strings.Replace(news[count-1].Message, "<i=1>", "", -1)
-		result = strings.Replace(result, "</i>", "", -1)
-		result = strings.Replace(result, "<i=3>", "", -1)
-
-		return result
+func (b *Bot) handleDemocracyCommand() (string, error) {
+	news, err := hell_divers.GetNews(*b.cfg)
+	if err != nil {
+		return "", err
 	}
-	return ""
+
+	return createMessages(news), nil
+}
+
+func (b *Bot) handleHelpCommand() string {
+	return `Доступные команды:
+• "За демократию!" или /democracy - получить последние новости с фронта
+• /help - показать это сообщение
+
+За свободу! За управляемую демократию!`
+}
+
+func createMessages(news []hell_divers.NewsFeed) string {
+	if len(news) == 0 {
+		return "Новостей с фронта пока нет. Демократия ждет ваших свершений!"
+	}
+
+	// Берем последнюю новость
+	latestNews := news[len(news)-1]
+
+	if latestNews.Message == "" {
+		return "Получена пустая новость. Возможно, враги демократии вмешались в коммуникации!"
+	}
+
+	// Очищаем HTML теги
+	result := strings.Replace(latestNews.Message, "<i=1>", "", -1)
+	result = strings.Replace(result, "</i>", "", -1)
+	result = strings.Replace(result, "<i=3>", "", -1)
+	result = strings.Replace(result, "<br>", "\n", -1)
+
+	// Добавляем заголовок если есть контент
+	if result != "" {
+		result = "📢 СВЕЖИЕ НОВОСТИ С ФРОНТА:\n\n" + result
+	}
+
+	return result
 }

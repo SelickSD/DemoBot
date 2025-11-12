@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
+	"github.com/SelickSD/DemoBot.git/internal/logger"
 )
 
 type NewsFeed struct {
@@ -20,12 +21,15 @@ type NewsFeed struct {
 func GetNews(config config.Config) ([]NewsFeed, error) {
 	baseURL := "https://api.helldivers2.dev/raw/api/NewsFeed/801"
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
 	var allItems []NewsFeed
 
 	req, err := http.NewRequest("GET", baseURL, nil)
 	if err != nil {
-		fmt.Println("Ошибка создания запроса:", err)
+		logger.Error.Printf("Ошибка создания запроса: %v", err)
 		return nil, err
 	}
 
@@ -34,39 +38,44 @@ func GetNews(config config.Config) ([]NewsFeed, error) {
 	req.Header.Add("Accept-Language", "ru-RU")
 
 	maxRetries := 5
-	retryDelay := time.Second
+	retryDelay := time.Second * 2
 	var response []NewsFeed
 
 	for retries := 0; retries < maxRetries; retries++ {
+		logger.Info.Printf("Попытка запроса %d из %d", retries+1, maxRetries)
+
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Println("Ошибка выполнения запроса:", err)
+			logger.Error.Printf("Ошибка выполнения запроса: %v", err)
 			return nil, err
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			fmt.Println("Ошибка чтения ответа:", err)
+			logger.Error.Printf("Ошибка чтения ответа: %v", err)
 			return nil, err
 		}
 
 		if resp.StatusCode == http.StatusServiceUnavailable {
-			fmt.Printf("Сервер вернул 503. Попытка %d из %d. Жду %s...\n", retries+1, maxRetries, retryDelay)
+			logger.Info.Printf("Сервер вернул 503. Попытка %d из %d. Жду %s...", retries+1, maxRetries, retryDelay)
 			time.Sleep(retryDelay)
-			continue // пробуем снова
+			retryDelay *= 2 // Экспоненциальная задержка
+			continue
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			fmt.Printf("Ошибка: статус %d\nОтвет: %s\n", resp.StatusCode, string(body))
-			return nil, fmt.Errorf("Status Error")
+			logger.Error.Printf("Ошибка: статус %d\nОтвет: %s", resp.StatusCode, string(body))
+			return nil, fmt.Errorf("API вернул статус: %d", resp.StatusCode)
 		}
 
 		err = json.Unmarshal(body, &response)
 		if err != nil {
+			logger.Error.Printf("Ошибка парсинга JSON: %v", err)
 			return nil, err
 		}
 
+		logger.Info.Printf("Успешно получено %d новостей", len(response))
 		break
 	}
 
