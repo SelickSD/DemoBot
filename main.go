@@ -84,7 +84,7 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	case "/start", "/help":
 		response = b.handleHelpCommand()
 	default:
-		response = "Неизвестная команда. Напишите /help для списка команд."
+		break
 	}
 
 	if err != nil {

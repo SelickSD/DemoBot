@@ -34,6 +34,9 @@ go.work
 .env.local
 .env.production
 
+# Но НЕ игнорируем .env.example
+!.env.example
+
 # Log files
 *.log
 logs/
@@ -71,3 +74,9 @@ temp/
 # Coverage reports
 coverage.html
 coverage.out
+
+# Добавляем в существующий .gitignore:
+
+# Бинарники
+demobot
+bot
