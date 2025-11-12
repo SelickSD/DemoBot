@@ -14,7 +14,7 @@ type BotConfig struct {
 type Config struct {
 	Debug       bool   `envconfig:"DEBUG" default:"false"`
 	ConfigEmail string `envconfig:"CONFIG_EMAIL" required:"true"`
-	BotConfig   BotConfig
+	Bot         BotConfig
 }
 
 func Load() (*Config, error) {
