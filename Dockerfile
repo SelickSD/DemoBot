@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bot .
 FROM alpine:latest
 
 # Устанавливаем CA certificates для HTTPS запросов
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
 # Создаем пользователя для безопасности
 RUN addgroup -S app && adduser -S app -G app
@@ -33,9 +33,17 @@ WORKDIR /app
 # Копируем бинарник из стадии сборки
 COPY --from=builder /app/bot .
 
+# Устанавливаем правильного владельца
+RUN chown -R app:app /app
+
+# Переключаемся на непривилегированного пользователя
+USER app
+
 # Объявляем переменные окружения
 ENV BOT_TOKEN=""
 ENV DEBUG="false"
+ENV CONFIG_EMAIL=""
+ENV BOT_NAME=""
 
 # Команда запуска
 CMD ["./bot"]

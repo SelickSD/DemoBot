@@ -50,10 +50,10 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-          # Логинимся в Docker Hub на сервере (БЕЗ sudo)
+          # Логинимся в Docker Hub на сервере
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-          # Деплой приложения (БЕЗ sudo - все команды от имени deployer)
+          # Деплой приложения
           docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
           docker stop demobot || true
           docker rm demobot || true
@@ -61,5 +61,28 @@ jobs:
             --name demobot \
             --restart unless-stopped \
             -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
-            -e DEBUG="false" \
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest  
+            -e DEBUG="true" \  # Временно включаем debug для диагностики
+            -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \
+            -e BOT_NAME="${{ secrets.BOT_NAME }}" \
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:latest
+
+          # Ждем немного и проверяем статус
+          sleep 10
+          docker ps -a
+          echo "=== Last 20 lines of logs ==="
+          docker logs --tail 20 demobot
+
+    - name: Verify deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          echo "🔍 Checking container status..."
+          docker ps -a
+          
+          echo "📋 Checking recent logs..."
+          docker logs --tail 20 demobot || echo "Container not running or no logs"
+          
+          echo "✅ Deployment verification completed"

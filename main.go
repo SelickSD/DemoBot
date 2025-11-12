@@ -22,6 +22,11 @@ func main() {
 	// Загружаем конфиг из переменных окружения
 	cfg := config.Load()
 
+	log.Printf("🚀 Starting DemoBot...")
+	log.Printf("📝 Bot Name: %s", cfg.BotName)
+	log.Printf("🔧 Debug Mode: %t", cfg.Debug)
+	log.Printf("📧 Config Email: %s", cfg.ConfigEmail)
+
 	bot, err := tgbotapi.NewBotAPI(cfg.BotToken)
 	if err != nil {
 		log.Panic(err)
