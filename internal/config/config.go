@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -18,6 +20,10 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("⚠️  .env file not found, using system environment variables")
+	}
+
 	cfg := new(Config)
 
 	if err := envconfig.Process("", cfg); err != nil {
