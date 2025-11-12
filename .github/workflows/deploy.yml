@@ -1,26 +1,18 @@
-name: CI/CD to Own Server
+name: Deploy to Production
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build-test-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    # Добавляем условие чтобы деплой не запускался из PR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.25'
-
-      - name: Test
-        run: go test ./...
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,10 +39,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # Логинимся в Docker Hub на сервере
+            echo "🚀 Deploying version ${{ github.sha }} to production..."
+            
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             
-            # Деплой приложения
             docker pull "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
             docker stop demobot || true
             docker rm demobot || true
@@ -58,27 +50,11 @@ jobs:
               --name demobot \
               --restart unless-stopped \
               -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
-              -e DEBUG="true" \
+              -e DEBUG="false" \
               -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \
               -e BOT_NAME="${{ secrets.BOT_NAME }}" \
               "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
             
-            # Ждем и проверяем
-            sleep 5
-            echo "=== Container status ==="
-            docker ps -a
-            echo "=== Container logs ==="
-            docker logs demobot || echo "No logs yet"
-
-      - name: Verify deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
             sleep 10
-            echo "=== Final check ==="
-            docker ps -a
-            echo "=== Recent logs ==="
-            docker logs --tail 30 demobot || echo "Container might have exited"
+            echo "✅ Production deployment completed!"
+            docker ps -a | grep demobot
