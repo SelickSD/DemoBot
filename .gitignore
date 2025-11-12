@@ -1,0 +1,73 @@
+# Игнорируем файлы IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# JetBrains IDE
+.vscode/
+*.swp
+*.swo
+*~
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output of the go coverage tool
+*.txt
+
+# Dependency directories
+vendor/
+node_modules/
+
+# Go workspace file
+go.work
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Log files
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Build artifacts
+/dist/
+/build/
+
+# Temporary files
+tmp/
+temp/
+
+# Specific to your project
+/config.local.yaml
+/config.yml
+/secrets.yml
+
+# Binary of your application
+/bot
+/demobot
+/main
+
+# Coverage reports
+coverage.html
+coverage.out
