@@ -1,8 +1,9 @@
 package config
 
 import (
-	"log"
 	"os"
+
+	"github.com/SelickSD/DemoBot.git/internal/logger"
 )
 
 type Config struct {
@@ -10,23 +11,25 @@ type Config struct {
 	Debug       bool
 	ConfigEmail string
 	BotName     string
-	// Другие параметры
 }
 
 func Load() *Config {
+	// Инициализируем логгер
+	logger.Init()
+
 	botToken := getEnv("BOT_TOKEN", "")
 	if botToken == "" {
-		log.Fatal("BOT_TOKEN environment variable is required")
+		logger.Error.Fatal("BOT_TOKEN environment variable is required")
 	}
 
 	configEmail := getEnv("CONFIG_EMAIL", "")
-	if botToken == "" {
-		log.Fatal("CONFIG_EMAIL environment variable is required")
+	if configEmail == "" { // Была ошибка - проверяли botToken вместо configEmail
+		logger.Error.Fatal("CONFIG_EMAIL environment variable is required")
 	}
 
 	botName := getEnv("BOT_NAME", "")
-	if botToken == "" {
-		log.Fatal("BOT_NAME environment variable is required")
+	if botName == "" { // Была ошибка - проверяли botToken вместо botName
+		logger.Error.Fatal("BOT_NAME environment variable is required")
 	}
 
 	return &Config{
