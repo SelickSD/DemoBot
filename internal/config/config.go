@@ -1,45 +1,45 @@
 package config
 
 import (
-    "os"
-    "log"
+	"log"
+	"os"
 )
 
 type Config struct {
-    BotToken string
-    Debug    bool
+	BotToken    string
+	Debug       bool
 	ConfigEmail string
-	BotName string
-    // Другие параметры...
+	BotName     string
+	// Другие параметры
 }
 
 func Load() *Config {
-    botToken := getEnv("BOT_TOKEN", "")
-    if botToken == "" {
-        log.Fatal("BOT_TOKEN environment variable is required")
-    }
+	botToken := getEnv("BOT_TOKEN", "")
+	if botToken == "" {
+		log.Fatal("BOT_TOKEN environment variable is required")
+	}
 
 	configEmail := getEnv("CONFIG_EMAIL", "")
-    if botToken == "" {
-        log.Fatal("CONFIG_EMAIL environment variable is required")
-    }
+	if botToken == "" {
+		log.Fatal("CONFIG_EMAIL environment variable is required")
+	}
 
 	botName := getEnv("BOT_NAME", "")
-    if botToken == "" {
-        log.Fatal("BOT_NAME environment variable is required")
-    }
+	if botToken == "" {
+		log.Fatal("BOT_NAME environment variable is required")
+	}
 
-    return &Config{
-        BotToken: botToken,
-        Debug:    getEnv("DEBUG", "false") == "true",
+	return &Config{
+		BotToken:    botToken,
+		Debug:       getEnv("DEBUG", "false") == "true",
 		ConfigEmail: configEmail,
-		BotName: botName,
-    }
+		BotName:     botName,
+	}
 }
 
 func getEnv(key, defaultValue string) string {
-    if value := os.Getenv(key); value != "" {
-        return value
-    }
-    return defaultValue
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
