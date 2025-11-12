@@ -1,0 +1,50 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate PR
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.25'
+
+      - name: Run tests
+        run: go test -v -race ./...
+
+      - name: Check code format
+        run: |
+          test -z $(go fmt ./...)
+
+      - name: Vet check
+        run: go vet ./...
+
+      - name: Build verification
+        run: go build -o demobot .
+
+      - name: Build Docker image
+        run: |
+          docker build -t demobot:pr-${{ github.event.pull_request.number }} .
+
+  notify-on-approval:
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    name: Notify on Approval
+    needs: validate
+
+    steps:
+      - name: Notify approval
+        run: |
+          echo "✅ PR #${{ github.event.pull_request.number }} approved by ${{ github.event.review.user.login }}"
+          echo "PR is ready to be merged: ${{ github.event.pull_request.html_url }}"
