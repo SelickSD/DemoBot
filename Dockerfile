@@ -1,49 +1,33 @@
 # Стадия сборки
 FROM golang:1.25-alpine AS builder
 
-# Устанавливаем зависимости для сборки
 RUN apk add --no-cache git
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем файлы модулей сначала для кэширования
 COPY go.mod go.sum ./
-
-# Скачиваем зависимости
 RUN go mod download
 
-# Копируем исходный код
 COPY . .
 
-# Собираем приложение (main.go в корне)
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bot .
 
 # Стадия запуска
 FROM alpine:latest
 
-# Устанавливаем CA certificates для HTTPS запросов
 RUN apk --no-cache add ca-certificates tzdata
-
-# Создаем пользователя для безопасности
-RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
-# Копируем бинарник из стадии сборки
 COPY --from=builder /app/bot .
 
-# Устанавливаем правильного владельца
-RUN chown -R app:app /app
+# Добавляем healthcheck для мониторинга
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD ps aux | grep bot | grep -v grep || exit 1
 
-# Переключаемся на непривилегированного пользователя
-USER app
-
-# Объявляем переменные окружения
 ENV BOT_TOKEN=""
 ENV DEBUG="false"
 ENV CONFIG_EMAIL=""
 ENV BOT_NAME=""
 
-# Команда запуска
 CMD ["./bot"]
