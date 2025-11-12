@@ -17,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI(cfg.BotConfig.BotToken)
+	bot, err := tgbotapi.NewBotAPI(cfg.Bot.BotToken)
 	if err != nil {
 		log.Panic(err)
 	}
