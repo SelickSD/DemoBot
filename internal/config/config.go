@@ -1,45 +1,28 @@
 package config
 
 import (
-    "os"
-    "log"
+	"fmt"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
+type BotConfig struct {
+	BotToken string `envconfig:"BOT_TOKEN" required:"true"`
+	BotName  string `envconfig:"BOT_NAME" required:"true"`
+}
+
 type Config struct {
-    BotToken string
-    Debug    bool
-	ConfigEmail string
-	BotName string
-    // Другие параметры...
+	Debug       bool   `envconfig:"DEBUG" default:"false"`
+	ConfigEmail string `envconfig:"CONFIG_EMAIL" required:"true"`
+	BotConfig   BotConfig
 }
 
-func Load() *Config {
-    botToken := getEnv("BOT_TOKEN", "")
-    if botToken == "" {
-        log.Fatal("BOT_TOKEN environment variable is required")
-    }
+func Load() (*Config, error) {
+	cfg := new(Config)
 
-	configEmail := getEnv("CONFIG_EMAIL", "")
-    if botToken == "" {
-        log.Fatal("CONFIG_EMAIL environment variable is required")
-    }
+	if err := envconfig.Process("", cfg); err != nil {
+		return nil, fmt.Errorf("error while parse env config | %w", err)
+	}
 
-	botName := getEnv("BOT_NAME", "")
-    if botToken == "" {
-        log.Fatal("BOT_NAME environment variable is required")
-    }
-
-    return &Config{
-        BotToken: botToken,
-        Debug:    getEnv("DEBUG", "false") == "true",
-		ConfigEmail: configEmail,
-		BotName: botName,
-    }
-}
-
-func getEnv(key, defaultValue string) string {
-    if value := os.Getenv(key); value != "" {
-        return value
-    }
-    return defaultValue
+	return cfg, nil
 }

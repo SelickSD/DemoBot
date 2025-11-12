@@ -12,9 +12,12 @@ import (
 
 func main() {
 	// Загружаем конфиг из переменных окружения
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	bot, err := tgbotapi.NewBotAPI(cfg.BotToken)
+	bot, err := tgbotapi.NewBotAPI(cfg.BotConfig.BotToken)
 	if err != nil {
 		log.Panic(err)
 	}

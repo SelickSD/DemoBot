@@ -29,7 +29,7 @@ func GetNews(config config.Config) ([]NewsFeed, error) {
 		return nil, err
 	}
 
-	req.Header.Add("X-Super-Client", config.BotName)
+	req.Header.Add("X-Super-Client", config.BotConfig.BotName)
 	req.Header.Add("X-Super-Contact", config.ConfigEmail)
 	req.Header.Add("Accept-Language", "ru-RU")
 
