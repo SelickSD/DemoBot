@@ -119,7 +119,7 @@ func (b *Bot) handleDemocracyCommand() (string, error) {
 	return createMessages(news), nil
 }
 
-func (b *Bot) handleHelpCommand() string {
+func (b *Bot) handleLexaCommand() string {
 	return `Да, нужны,:
 • Средства можно перечислить на карту Сергея
 ТБанк или Альфа, по номеру телефона.
@@ -153,7 +153,7 @@ func createMessages(news []hell_divers.NewsFeed) string {
 	return result
 }
 
-func (b *Bot) handleLexaCommand() string {
+func (b *Bot) handleHelpCommand() string {
 	return `Доступные команды:
 • "За демократию!" или /democracy - получить последние новости с фронта
 • /help - показать это сообщение
