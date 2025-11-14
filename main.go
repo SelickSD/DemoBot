@@ -88,7 +88,7 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		response, err = b.handleDemocracyCommand()
 	case "/start", "/help":
 		response = b.handleHelpCommand()
-	case "Бот, тебе нужны замки, мальдивы?":
+	case "бот, тебе нужны замки, мальдивы?":
 		response = b.handleLexaCommand()
 
 	default:
