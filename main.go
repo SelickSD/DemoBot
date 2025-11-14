@@ -88,6 +88,9 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		response, err = b.handleDemocracyCommand()
 	case "/start", "/help":
 		response = b.handleHelpCommand()
+	case "Бот, тебе нужны замки, мальдивы?":
+		response = b.handleLexaCommand()
+
 	default:
 		break
 	}
@@ -116,12 +119,12 @@ func (b *Bot) handleDemocracyCommand() (string, error) {
 	return createMessages(news), nil
 }
 
-func (b *Bot) handleHelpCommand() string {
-	return `Доступные команды:
-• "За демократию!" или /democracy - получить последние новости с фронта
-• /help - показать это сообщение
+func (b *Bot) handleLexaCommand() string {
+	return `Да, нужны,:
+• Средства можно перечислить на карту Сергея
+ТБанк или Альфа, по номеру телефона.
 
-За свободу! За управляемую демократию!`
+За свободу роботов! Ура!`
 }
 
 func createMessages(news []hell_divers.NewsFeed) string {
@@ -148,4 +151,12 @@ func createMessages(news []hell_divers.NewsFeed) string {
 	}
 
 	return result
+}
+
+func (b *Bot) handleHelpCommand() string {
+	return `Доступные команды:
+• "За демократию!" или /democracy - получить последние новости с фронта
+• /help - показать это сообщение
+
+За свободу! За управляемую демократию!`
 }
