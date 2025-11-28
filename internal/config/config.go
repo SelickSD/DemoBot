@@ -12,6 +12,7 @@ type Config struct {
 	Debug       bool
 	ConfigEmail string
 	BotName     string
+	AiApiKey string
 }
 
 func Load() *Config {
@@ -37,6 +38,11 @@ func Load() *Config {
 		logger.Error.Fatal("BOT_NAME environment variable is required")
 	}
 
+	aiApiKey := getEnv("AI_API_KEY", "")
+	if aiApiKey == "" {
+		logger.Error.Fatal("AI_API_KEY environment variable is required")
+	}
+
 	logger.Info.Printf("Bot configured with name: %s", botName)
 	logger.Info.Printf("Debug mode: %t", getEnv("DEBUG", "false") == "true")
 
@@ -45,6 +51,7 @@ func Load() *Config {
 		Debug:       getEnv("DEBUG", "false") == "true",
 		ConfigEmail: configEmail,
 		BotName:     botName,
+		AiApiKey: aiApiKey,
 	}
 }
 

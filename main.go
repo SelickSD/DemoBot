@@ -9,6 +9,7 @@ import (
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	hell_divers "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
+	polzaApi "github.com/SelickSD/DemoBot.git/internal/repository/polza-ai-api"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -16,6 +17,7 @@ import (
 type Bot struct {
 	cfg    *config.Config
 	botAPI *tgbotapi.BotAPI
+	polzaAiCli *polzaApi.AiApyClient
 }
 
 func main() {
@@ -32,10 +34,16 @@ func main() {
 		log.Panic(err)
 	}
 
+	log.Printf("📧 Bot started")
+
+	apiClient := polzaApi.NewAIApiKey(*cfg)
+
 	demobot := &Bot{
 		cfg:    cfg,
 		botAPI: bot,
+		polzaAiCli: apiClient,
 	}
+
 
 	demobot.botAPI.Debug = cfg.Debug
 	log.Printf("Authorized on account %s", demobot.botAPI.Self.UserName)
@@ -88,8 +96,11 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		response, err = b.handleDemocracyCommand()
 	case "/start", "/help":
 		response = b.handleHelpCommand()
-
 	default:
+		if isBotCommand(strings.ToLower(update.Message.Text)) {
+    	actualMessage := extractBotMessage(strings.ToLower(update.Message.Text))
+		response = b.polzaAiCli.PostNewMassage(actualMessage)
+		}
 		break
 	}
 
@@ -149,4 +160,20 @@ func (b *Bot) handleHelpCommand() string {
 • /help - показать это сообщение
 
 За свободу! За управляемую демократию!`
+}
+
+func isBotCommand(message string) bool {
+    return strings.HasPrefix(strings.ToLower(strings.TrimSpace(message)), "bot")
+}
+
+func extractBotMessage(message string) string {
+    message = strings.TrimSpace(message)
+    if strings.HasPrefix(strings.ToLower(message), "bot") {
+        // Убираем "bot" и лишние запятые/пробелы
+        cleaned := strings.TrimSpace(message[3:])
+        cleaned = strings.TrimPrefix(cleaned, ",")
+        cleaned = strings.TrimPrefix(cleaned, " ")
+        return strings.TrimSpace(cleaned)
+    }
+    return ""
 }
