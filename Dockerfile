@@ -26,6 +26,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD ps aux | grep bot | grep -v grep || exit 1
 
 ENV BOT_TOKEN=""
+ENV AI_API_KEY=""
 ENV DEBUG="false"
 ENV CONFIG_EMAIL=""
 ENV BOT_NAME=""
