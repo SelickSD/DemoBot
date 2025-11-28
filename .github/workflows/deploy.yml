@@ -50,7 +50,7 @@ jobs:
               --name demobot \
               --restart unless-stopped \
               -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
-              -e BOT_TOKEN="${{ secrets.AI_API_KEY }}" \
+              -e AI_API_KEY="${{ secrets.AI_API_KEY }}" \
               -e DEBUG="false" \
               -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \
               -e BOT_NAME="${{ secrets.BOT_NAME }}" \
