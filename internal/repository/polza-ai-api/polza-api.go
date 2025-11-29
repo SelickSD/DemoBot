@@ -157,7 +157,7 @@ func (c *AiApyClient) PostNewMassage(massage string) string {
             {Role: "user", Content: massage},
         },
         Temperature: 0.7,
-        MaxTokens: 200,
+        MaxTokens: 1000,
     }
 
     resp, err := createChatCompletion(c.cfg.AiApiKey, request)
