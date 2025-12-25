@@ -31,7 +31,7 @@ deps:
 
 # Локальный запуск без сборки
 run:
-	@go run main.go
+	@go run cmd/demobot/main.go
 
 # Помощь
 help:

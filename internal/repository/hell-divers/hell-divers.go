@@ -9,23 +9,24 @@ import (
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	"github.com/SelickSD/DemoBot.git/internal/logger"
+	"github.com/SelickSD/DemoBot.git/internal/repository/hell-divers/dto"
 )
 
-type NewsFeed struct {
-	Id        int    `json:"id"`
-	Published int    `json:"published"`
-	Type      int    `json:"type"`
-	Message   string `json:"message"`
+type HellDiversRepo struct {
 }
 
-func GetNews(config config.Config) ([]NewsFeed, error) {
+func NewRepository() *HellDiversRepo {
+	return &HellDiversRepo{}
+}
+
+func (r *HellDiversRepo) GetNews(config config.Config) ([]dto.NewsFeed, error) {
 	baseURL := "https://api.helldivers2.dev/raw/api/NewsFeed/801"
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	var allItems []NewsFeed
+	var allItems []dto.NewsFeed
 
 	req, err := http.NewRequest("GET", baseURL, nil)
 	if err != nil {
@@ -39,7 +40,7 @@ func GetNews(config config.Config) ([]NewsFeed, error) {
 
 	maxRetries := 5
 	retryDelay := time.Second * 2
-	var response []NewsFeed
+	var response []dto.NewsFeed
 
 	for retries := 0; retries < maxRetries; retries++ {
 		logger.Info.Printf("Попытка запроса %d из %d", retries+1, maxRetries)
