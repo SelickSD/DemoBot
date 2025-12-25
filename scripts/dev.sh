@@ -18,4 +18,4 @@ source .env
 set +a
 
 echo "🔧 Запуск бота..."
-go run main.go
+go run cmd/demobot/main.go

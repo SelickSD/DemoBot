@@ -10,7 +10,10 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bot .
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -o /app/bot \
+    ./cmd/demobot
 
 # Стадия запуска
 FROM alpine:latest
@@ -21,7 +24,6 @@ WORKDIR /app
 
 COPY --from=builder /app/bot .
 
-# Добавляем healthcheck для мониторинга
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD ps aux | grep bot | grep -v grep || exit 1
 
