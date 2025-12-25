@@ -31,7 +31,7 @@ jobs:
         run: go vet ./...
 
       - name: Build verification
-        run: go build -o demobot .
+        run: go build ./cmd/demobot
 
       - name: Build Docker image
         run: |
