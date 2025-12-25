@@ -12,7 +12,7 @@ type Config struct {
 	Debug       bool
 	ConfigEmail string
 	BotName     string
-	AiApiKey string
+	AiApiKey    string
 }
 
 func Load() *Config {
@@ -51,7 +51,7 @@ func Load() *Config {
 		Debug:       getEnv("DEBUG", "false") == "true",
 		ConfigEmail: configEmail,
 		BotName:     botName,
-		AiApiKey: aiApiKey,
+		AiApiKey:    aiApiKey,
 	}
 }
 
