@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            set -e  # Выходим при первой ошибке
+            set -e
             
             echo "🚀 Deploying version ${{ github.sha }} to production..."
             
@@ -46,63 +46,54 @@ jobs:
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             
             # Останавливаем старый контейнер
-            echo "🛑 Останавливаем старый контейнер..."
             docker stop demobot 2>/dev/null || true
             docker rm demobot 2>/dev/null || true
             
             # Забираем новую версию
-            echo "📥 Загружаем новый образ..."
             docker pull "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
             
-            # Проверяем подключение к Postgres
-            echo "🔍 Проверяем подключение к Postgres..."
-            if docker run --rm \
-              postgres:15-alpine \
-              sh -c "PGPASSWORD='${{ secrets.DB_PASSWORD }}' psql -h '${{ secrets.DB_HOST }}' -p '${{ secrets.DB_PORT }}' -U '${{ secrets.DB_USER }}' -d '${{ secrets.DB_NAME }}' -c '\q' 2>/dev/null"; then
-              echo "✅ Подключение к Postgres успешно"
-            else
-              echo "❌ Ошибка подключения к Postgres"
-              echo "Host: ${{ secrets.DB_HOST }}:{{ secrets.DB_PORT }}"
-              echo "DB: ${{ secrets.DB_NAME }}"
-              exit 1
+            # Проверяем и запускаем PostgreSQL если нужно
+            if ! systemctl is-active --quiet postgresql; then
+              echo "🔧 Запускаем PostgreSQL..."
+              systemctl start postgresql
+              sleep 2
             fi
             
-            # Создаем файл с переменными окружения
-            echo "📝 Настраиваем переменные окружения..."
-            cat > /tmp/demobot.env << EOF
-            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
-            AI_API_KEY=${{ secrets.AI_API_KEY }}
-            DEBUG=false
-            CONFIG_EMAIL=${{ secrets.CONFIG_EMAIL }}
-            BOT_NAME=${{ secrets.BOT_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_HOST=${{ secrets.DB_HOST }}
-            DB_PORT=${{ secrets.DB_PORT }}
-            DB_NAME=${{ secrets.DB_NAME }}
-            EOF
-            
-            # Запускаем новый контейнер
-            echo "▶️ Запускаем новый контейнер..."
+            # Запускаем контейнер в сети хоста (самый простой способ)
+            echo "▶️ Запускаем контейнер в сети хоста..."
             docker run -d \
               --name demobot \
+              --network host \
               --restart unless-stopped \
-              --env-file /tmp/demobot.env \
+              -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
+              -e AI_API_KEY="${{ secrets.AI_API_KEY }}" \
+              -e DEBUG="false" \
+              -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \
+              -e BOT_NAME="${{ secrets.BOT_NAME }}" \
+              -e DB_USER="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e DB_HOST="localhost" \
+              -e DB_PORT="${{ secrets.DB_PORT }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
               "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
             
-            # Очищаем временный файл
-            rm -f /tmp/demobot.env
-            
             # Ждем и проверяем
-            echo "⏳ Ждем запуска контейнера..."
             sleep 15
             
             if docker ps | grep -q demobot; then
-              echo "✅ Production deployment completed!"
-              echo "📊 Статус контейнера:"
-              docker ps -f name=demobot --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+              echo "✅ Контейнер успешно запущен!"
+            
+              # Быстрая проверка логов
+              echo "📋 Проверяем логи..."
+              if ! docker logs demobot --tail 5 2>&1 | grep -i "error\|fail\|panic" > /dev/null; then
+                echo "✅ Ошибок в логах не обнаружено"
+                echo "🎉 Деплой успешно завершен!"
+              else
+                echo "⚠️  В логах есть ошибки:"
+                docker logs demobot --tail 20
+              fi
             else
               echo "❌ Контейнер не запустился"
-              docker logs demobot --tail 50 || true
+              docker logs demobot --tail 30 2>/dev/null || echo "Логи недоступны"
               exit 1
             fi
