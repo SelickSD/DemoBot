@@ -1,21 +1,28 @@
 #!/bin/bash
+set -e
 
-# scripts/dev.sh
+echo "🚀 Запуск DemoBot (dev mode)"
 
-echo "🚀 Запуск DemoBot в режиме разработки..."
-
-# Проверяем наличие .env файла
 if [ ! -f .env ]; then
-    echo "⚠️  Файл .env не найден. Создайте его из .env.example"
-    cp .env.example .env
-    echo "📝 Файл .env создан. Заполните его реальными значениями."
-    exit 1
+  echo "⚠️  .env не найден"
+  cp .env.example .env
+  echo "✏️  Заполни .env и перезапусти"
+  exit 1
 fi
 
-# Загружаем переменные окружения
 set -a
 source .env
 set +a
 
-echo "🔧 Запуск бота..."
-go run cmd/demobot/main.go
+echo "🐘 Проверяем PostgreSQL..."
+if ! nc -z localhost 5432; then
+  echo "❌ PostgreSQL не запущен на 5432"
+  exit 1
+fi
+
+echo "📦 Применяем миграции..."
+goose -dir build/app/migrations postgres \
+"postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable" up
+
+echo "🤖 Запуск бота..."
+go run ./cmd/demobot/main.go

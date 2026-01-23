@@ -106,11 +106,15 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	}
 
 	if response != "" {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, response)
-		msg.ReplyToMessageID = update.Message.MessageID
+		// Разбиваем сообщение, если оно слишком длинное
+		messages := splitMessage(response, 4096)
+		for _, msgText := range messages {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+			msg.ReplyToMessageID = update.Message.MessageID
 
-		if _, err := b.botApiClient.Send(msg); err != nil {
-			log.Printf("Error sending message: %v", err)
+			if _, err := b.botApiClient.Send(msg); err != nil {
+				log.Printf("Error sending message part: %v", err)
+			}
 		}
 	}
 }
@@ -146,4 +150,24 @@ func extractBotMessage(message string) string {
 		return strings.TrimSpace(cleaned)
 	}
 	return ""
+}
+
+// splitMessage разбивает строку на части заданной максимальной длины
+func splitMessage(text string, maxSize int) []string {
+	var result []string
+
+	for len(text) > maxSize {
+		// Пытаемся разбить по последнему пробелу в пределах maxSize, чтобы не резать слова
+		breakIndex := maxSize
+		if i := strings.LastIndex(text[:maxSize], " "); i > 0 {
+			breakIndex = i
+		}
+		result = append(result, text[:breakIndex])
+		text = strings.TrimSpace(text[breakIndex:])
+	}
+	if len(text) > 0 {
+		result = append(result, text)
+	}
+
+	return result
 }

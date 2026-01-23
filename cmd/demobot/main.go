@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/SelickSD/DemoBot.git/internal/app/bot"
 	"github.com/SelickSD/DemoBot.git/internal/config"
+	"github.com/SelickSD/DemoBot.git/internal/repository/db"
 	diversRepo "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
 	polzaApi "github.com/SelickSD/DemoBot.git/internal/repository/polza-ai-api"
 	"github.com/SelickSD/DemoBot.git/internal/service/ai_service"
@@ -15,6 +17,11 @@ import (
 
 func main() {
 	cfg := config.Load()
+	ctx := context.Background()
+
+	if err := db.Init(ctx); err != nil {
+		log.Fatal(err)
+	}
 
 	botApiClient, err := tgbotapi.NewBotAPI(cfg.BotToken)
 	if err != nil {

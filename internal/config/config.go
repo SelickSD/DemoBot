@@ -43,6 +43,31 @@ func Load() *Config {
 		logger.Error.Fatal("AI_API_KEY environment variable is required")
 	}
 
+	dbUser := getEnv("DB_USER", "")
+	if dbUser == "" {
+		logger.Error.Fatal("DB_USER environment variable is required")
+	}
+
+	dbPassword := getEnv("DB_PASSWORD", "")
+	if dbPassword == "" {
+		logger.Error.Fatal("DB_PASSWORD environment variable is required")
+	}
+
+	dbHost := getEnv("DB_HOST", "")
+	if dbHost == "" {
+		logger.Error.Fatal("DB_HOST environment variable is required")
+	}
+
+	dbPort := getEnv("DB_PORT", "")
+	if dbPort == "" {
+		logger.Error.Fatal("DB_PORT environment variable is required")
+	}
+
+	dbName := getEnv("DB_NAME", "")
+	if dbName == "" {
+		logger.Error.Fatal("DB_NAME environment variable is required")
+	}
+
 	logger.Info.Printf("Bot configured with name: %s", botName)
 	logger.Info.Printf("Debug mode: %t", getEnv("DEBUG", "false") == "true")
 

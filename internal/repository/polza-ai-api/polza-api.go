@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	"github.com/SelickSD/DemoBot.git/internal/repository/polza-ai-api/dto"
@@ -56,7 +57,10 @@ func createChatCompletion(apiKey string, request dto.ChatRequest) (*dto.ChatResp
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	// Используем клиент с таймаутом 60 секунд (или больше, если нужно)
+	client := &http.Client{
+		Timeout: 60 * time.Second, // Можно увеличить до 120, если нужно
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
