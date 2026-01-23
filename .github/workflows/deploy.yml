@@ -54,6 +54,11 @@ jobs:
               -e DEBUG="false" \
               -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \
               -e BOT_NAME="${{ secrets.BOT_NAME }}" \
+              -e DB_USER="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e DB_HOST="${{ secrets.DB_HOST }}" \
+              -e DB_PORT="${{ secrets.DB_PORT }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
               "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
             
             sleep 10
