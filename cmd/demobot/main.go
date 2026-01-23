@@ -36,5 +36,6 @@ func main() {
 
 	demobot := bot.NewBot(cfg, botApiClient, diversService, aiService)
 
+	//Run
 	demobot.Run()
 }
