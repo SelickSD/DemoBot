@@ -24,7 +24,7 @@ func NewAIApiKey(cfg config.Config) *AiApyClient {
 
 func (c *AiApyClient) PostNewMassage(massage string) string {
 	request := dto.ChatRequest{
-		Model: "deepseek/deepseek-chat-v3.1",
+		Model: "openai/gpt-5.1-chat", //deepseek/deepseek-chat-v3.1
 		Messages: []dto.Message{
 			{Role: "user", Content: massage},
 		},
