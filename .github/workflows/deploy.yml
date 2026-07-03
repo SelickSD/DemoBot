@@ -2,21 +2,21 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -31,69 +31,86 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/demobot:latest
             ${{ secrets.DOCKER_USERNAME }}/demobot:${{ github.sha }}
 
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            set -e
-            
-            echo "🚀 Deploying version ${{ github.sha }} to production..."
-            
-            # Авторизация в Docker
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            
-            # Останавливаем старый контейнер
-            docker stop demobot 2>/dev/null || true
-            docker rm demobot 2>/dev/null || true
-            
-            # Забираем новую версию
-            docker pull "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
-            
-            # Проверяем и запускаем PostgreSQL если нужно
-            if ! systemctl is-active --quiet postgresql; then
-              echo "🔧 Запускаем PostgreSQL..."
-              systemctl start postgresql
-              sleep 2
-            fi
-            
-            # Запускаем контейнер в сети хоста (самый простой способ)
-            echo "▶️ Запускаем контейнер в сети хоста..."
-            docker run -d \
-              --name demobot \
-              --network host \
-              --restart unless-stopped \
-              -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
-              -e AI_API_KEY="${{ secrets.AI_API_KEY }}" \
-              -e DEBUG="false" \
-              -e CONFIG_EMAIL="${{ secrets.CONFIG_EMAIL }}" \
-              -e BOT_NAME="${{ secrets.BOT_NAME }}" \
-              -e DB_USER="${{ secrets.DB_USER }}" \
-              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              -e DB_HOST="localhost" \
-              -e DB_PORT="${{ secrets.DB_PORT }}" \
-              -e DB_NAME="${{ secrets.DB_NAME }}" \
-              "${{ secrets.DOCKER_USERNAME }}"/demobot:latest
-            
-            # Ждем и проверяем
-            sleep 15
-            
-            if docker ps | grep -q demobot; then
-              echo "✅ Контейнер успешно запущен!"
-            
-              # Быстрая проверка логов
-              echo "📋 Проверяем логи..."
-              if ! docker logs demobot --tail 5 2>&1 | grep -i "error\|fail\|panic" > /dev/null; then
-                echo "✅ Ошибок в логах не обнаружено"
-                echo "🎉 Деплой успешно завершен!"
-              else
-                echo "⚠️  В логах есть ошибки:"
-                docker logs demobot --tail 20
-              fi
-            else
-              echo "❌ Контейнер не запустился"
-              docker logs demobot --tail 30 2>/dev/null || echo "Логи недоступны"
-              exit 1
-            fi
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Sync deployment files
+        run: |
+          rsync -avz \
+            docker-compose.yml \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SERVER_USER }}/apps/demobot/
+
+      - name: Deploy
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          set -e
+
+          cd ~/apps/demobot
+
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+            -u "${{ secrets.DOCKER_USERNAME }}" \
+            --password-stdin
+
+          if [ ! -f .env ]; then
+            cat > .env <<EOT
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/demobot:latest
+
+          BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+          AI_API_KEY=${{ secrets.AI_API_KEY }}
+          CONFIG_EMAIL=${{ secrets.CONFIG_EMAIL }}
+          BOT_NAME=${{ secrets.BOT_NAME }}
+          DEBUG=false
+
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          EOT
+          fi
+
+          # На случай смены Docker Hub аккаунта
+          sed -i "s|^DOCKER_IMAGE=.*|DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/demobot:latest|" .env
+
+          docker compose pull
+          docker compose up -d --remove-orphans
+
+          docker image prune -f
+
+          echo "Waiting for startup..."
+          sleep 15
+
+          echo
+          echo "====== CONTAINERS ======"
+          docker compose ps
+
+          BOT_ID=$(docker compose ps -q bot)
+
+          if [ -z "$BOT_ID" ]; then
+            echo "Bot container not found"
+            exit 1
+          fi
+
+          if [ "$(docker inspect -f '{{.State.Running}}' "$BOT_ID")" != "true" ]; then
+            echo "Bot container is not running"
+
+            echo
+            echo "====== POSTGRES LOGS ======"
+            docker compose logs postgres --tail=50
+
+            echo
+            echo "====== BOT LOGS ======"
+            docker compose logs bot --tail=50
+
+            exit 1
+          fi
+
+          echo
+          echo "====== BOT LOGS ======"
+          docker compose logs bot --tail=50
+          EOF

@@ -1,28 +1,32 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Запуск DemoBot (dev mode)"
+echo "🚀 Starting DemoBot (development)"
 
 if [ ! -f .env ]; then
-  echo "⚠️  .env не найден"
-  cp .env.example .env
-  echo "✏️  Заполни .env и перезапусти"
-  exit 1
+    echo ".env not found"
+    cp .env.example .env
+    echo "Please edit .env"
+    exit 1
 fi
 
 set -a
 source .env
 set +a
 
-echo "🐘 Проверяем PostgreSQL..."
-if ! nc -z localhost 5432; then
-  echo "❌ PostgreSQL не запущен на 5432"
-  exit 1
-fi
+echo "Starting PostgreSQL..."
 
-echo "📦 Применяем миграции..."
-goose -dir build/app/migrations postgres \
-"postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable" up
+docker compose up -d postgres
 
-echo "🤖 Запуск бота..."
-go run ./cmd/demobot/main.go
+echo "Waiting for PostgreSQL..."
+
+until docker compose exec postgres pg_isready \
+    -U "$DB_USER" \
+    -d "$DB_NAME" >/dev/null 2>&1
+do
+    sleep 1
+done
+
+echo "Running bot..."
+
+go run ./cmd/demobot

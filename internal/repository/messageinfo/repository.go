@@ -3,7 +3,7 @@ package messageinfo
 import (
 	"context"
 
-	"github.com/SelickSD/DemoBot.git/internal/repository/db"
+	"github.com/SelickSD/DemoBot.git/internal/db"
 )
 
 type Repository struct{}

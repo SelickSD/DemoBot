@@ -1,4 +1,4 @@
-# Стадия сборки
+# ---------- Build stage ----------
 FROM golang:1.25-alpine AS builder
 
 RUN apk add --no-cache git
@@ -10,27 +10,23 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -a -installsuffix cgo \
+RUN CGO_ENABLED=0 \
+    GOOS=linux \
+    go build \
     -o /app/bot \
     ./cmd/demobot
 
-# Стадия запуска
+# ---------- Runtime stage ----------
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata
+
+RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
 COPY --from=builder /app/bot .
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD ps aux | grep bot | grep -v grep || exit 1
-
-ENV BOT_TOKEN=""
-ENV AI_API_KEY=""
-ENV DEBUG="false"
-ENV CONFIG_EMAIL=""
-ENV BOT_NAME=""
+USER app
 
 CMD ["./bot"]
