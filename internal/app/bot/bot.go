@@ -117,7 +117,8 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		}
 		response = "All messages have been deleted."
 	default:
-		if isBotCommand(strings.ToLower(update.Message.Text)) {
+		isReplay := isReplayToBot(update)
+		if isBotCommand(strings.ToLower(update.Message.Text)) || isReplay {
 			ctx := context.Background()
 			messageWithContext := b.prepareNewMassage(ctx, update.Message.Chat.ID)
 			err = b.saveNewMassage(update, "")
@@ -125,7 +126,12 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 				logger.Error.Printf("Error saving new massage: %v", err)
 			}
 
-			actualMessage := extractBotMessage(strings.ToLower(update.Message.Text))
+			actualMessage := update.Message.Text
+
+			if !isReplay {
+				actualMessage = extractBotMessage(strings.ToLower(update.Message.Text))
+			}
+
 			if len(messageWithContext) == 0 {
 				response = b.aiService.SendMessage([]dto.Message{{
 					Role:    "user",
@@ -278,4 +284,16 @@ func (b *Bot) prepareNewMassage(ctx context.Context, chatID int64) []dto.Message
 	logger.Info.Printf("%s", result)
 
 	return result
+}
+
+func isReplayToBot(update tgbotapi.Update) bool {
+	if update.Message != nil && update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From != nil {
+		switch update.Message.ReplyToMessage.From.UserName {
+		case "SelickBot", "SuperDemocracyBot":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
 }
