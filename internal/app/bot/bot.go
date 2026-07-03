@@ -1,13 +1,17 @@
 package bot
 
 import (
-	"log"
+	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/SelickSD/DemoBot.git/internal/config"
+	"github.com/SelickSD/DemoBot.git/internal/logger"
+	"github.com/SelickSD/DemoBot.git/internal/repository/messageinfo"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -19,11 +23,17 @@ type AiService interface {
 	SendMessage(massage string) string
 }
 
+type MessageService interface {
+	SaveNewMessage(ctx context.Context, msg messageinfo.MessageInfo) error
+	DellAll(ctx context.Context) error
+}
+
 type Bot struct {
 	cfg           *config.Config
 	botApiClient  *tgbotapi.BotAPI
 	diversService HellDiversService
 	aiService     AiService
+	msInfoService MessageService
 }
 
 func NewBot(
@@ -31,23 +41,25 @@ func NewBot(
 	botApiClient *tgbotapi.BotAPI,
 	diversService HellDiversService,
 	aiService AiService,
+	msInfoService MessageService,
 ) *Bot {
 	return &Bot{
 		cfg:           cfg,
 		botApiClient:  botApiClient,
 		diversService: diversService,
 		aiService:     aiService,
+		msInfoService: msInfoService,
 	}
 }
 
 func (b *Bot) Run() {
 	b.botApiClient.Debug = b.cfg.Debug
-	log.Printf("Authorized on account %s", b.botApiClient.Self.UserName)
+	logger.Info.Printf("Authorized on account %s", b.botApiClient.Self.UserName)
 
 	// Удаляем активный webhook
 	_, err := b.botApiClient.Request(tgbotapi.DeleteWebhookConfig{})
 	if err != nil {
-		log.Panic("failed to delete webhook:", err)
+		logger.Error.Panic("failed to delete webhook:", err)
 	}
 
 	// Обработка graceful shutdown
@@ -57,7 +69,7 @@ func (b *Bot) Run() {
 	go b.start()
 
 	<-sigChan
-	log.Println("Shutting down bot...")
+	logger.Info.Println("Shutting down bot...")
 }
 
 func (b *Bot) start() {
@@ -74,7 +86,7 @@ func (b *Bot) start() {
 func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("Recovered from panic in handleUpdate: %v", r)
+			logger.Info.Printf("Recovered from panic in handleUpdate: %v", r)
 		}
 	}()
 
@@ -82,7 +94,7 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		return
 	}
 
-	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+	logger.Info.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
 	var response string
 	var err error
@@ -92,8 +104,19 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		response, err = b.handleDemocracyCommand()
 	case "/start", "/help":
 		response = b.handleHelpCommand()
+	case "delete all":
+		err = b.msInfoService.DellAll(context.Background())
+		if err != nil {
+			logger.Error.Printf("Error deleting all messages: %v", err)
+		}
+		response = "All messages have been deleted."
 	default:
 		if isBotCommand(strings.ToLower(update.Message.Text)) {
+			err = b.saveNewMassage(update, "")
+			if err != nil {
+				logger.Error.Printf("Error saving new massage: %v", err)
+			}
+
 			actualMessage := extractBotMessage(strings.ToLower(update.Message.Text))
 			response = b.aiService.SendMessage(actualMessage)
 		}
@@ -101,7 +124,7 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	}
 
 	if err != nil {
-		log.Printf("Error handling command: %v", err)
+		logger.Info.Printf("Error handling command: %v", err)
 		response = "Произошла ошибка при обработке запроса. Попробуйте позже."
 	}
 
@@ -112,8 +135,15 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 			msg.ReplyToMessageID = update.Message.MessageID
 
+			if msgText != "All messages have been deleted." {
+				err = b.saveNewMassage(update, msgText)
+				if err != nil {
+					logger.Error.Printf("Error saving new massage: %v", err)
+				}
+			}
+
 			if _, err := b.botApiClient.Send(msg); err != nil {
-				log.Printf("Error sending message part: %v", err)
+				logger.Info.Printf("Error sending message part: %v", err)
 			}
 		}
 	}
@@ -170,4 +200,30 @@ func splitMessage(text string, maxSize int) []string {
 	}
 
 	return result
+}
+
+func (b *Bot) saveNewMassage(update tgbotapi.Update, replyMessage string) error {
+	message := update.Message.Text
+
+	if replyMessage != "" {
+		message = fmt.Sprintf("Reply from message id: %d, ChatID: %d, Reply text: %s", update.Message.MessageID, update.Message.Chat.ID, replyMessage)
+	}
+
+	ctx := context.Background()
+	newMessage := messageinfo.MessageInfo{
+		ID:        int64(update.UpdateID),
+		MessageID: int64(update.Message.MessageID),
+		ChatID:    update.Message.Chat.ID,
+		Message:   message,
+		UserID:    update.Message.From.ID,
+		CreatedAt: time.Now(),
+	}
+
+	err := b.msInfoService.SaveNewMessage(ctx, newMessage)
+	if err != nil {
+		logger.Info.Printf("Error saving new message: %v", err)
+		return fmt.Errorf("save new message: %w", err)
+	}
+
+	return nil
 }

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/SelickSD/DemoBot.git/internal/db"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/SelickSD/DemoBot.git/internal/repository/db"
 	"github.com/SelickSD/DemoBot.git/internal/repository/messageinfo"
 	"github.com/SelickSD/DemoBot.git/test/testdb"
 )
