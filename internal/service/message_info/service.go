@@ -8,6 +8,11 @@ import (
 
 type MessageInfoRepo interface {
 	Save(ctx context.Context, msg messageinfo.MessageInfo) error
+	GetByChatID(
+		ctx context.Context,
+		chatID int64,
+		limit int,
+	) ([]messageinfo.MessageInfo, error)
 	DeleteAll(ctx context.Context) error
 }
 
@@ -23,4 +28,12 @@ func NewService(msInfoRepo MessageInfoRepo) *Service {
 
 func (s *Service) DellAll(ctx context.Context) error {
 	return s.msInfoRepo.DeleteAll(ctx)
+}
+
+func (s *Service) GetByChatID(
+	ctx context.Context,
+	chatID int64,
+	limit int,
+) ([]messageinfo.MessageInfo, error) {
+	return s.msInfoRepo.GetByChatID(ctx, chatID, limit)
 }

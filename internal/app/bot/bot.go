@@ -12,6 +12,7 @@ import (
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	"github.com/SelickSD/DemoBot.git/internal/logger"
 	"github.com/SelickSD/DemoBot.git/internal/repository/messageinfo"
+	"github.com/SelickSD/DemoBot.git/internal/repository/polza-ai-api/dto"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -20,11 +21,16 @@ type HellDiversService interface {
 }
 
 type AiService interface {
-	SendMessage(massage string) string
+	SendMessage(massage []dto.Message) string
 }
 
 type MessageService interface {
 	SaveNewMessage(ctx context.Context, msg messageinfo.MessageInfo) error
+	GetByChatID(
+		ctx context.Context,
+		chatID int64,
+		limit int,
+	) ([]messageinfo.MessageInfo, error)
 	DellAll(ctx context.Context) error
 }
 
@@ -112,13 +118,20 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 		response = "All messages have been deleted."
 	default:
 		if isBotCommand(strings.ToLower(update.Message.Text)) {
+			ctx := context.Background()
+			messageWithContext := b.prepareNewMassage(ctx, update.Message.Chat.ID)
 			err = b.saveNewMassage(update, "")
 			if err != nil {
 				logger.Error.Printf("Error saving new massage: %v", err)
 			}
 
 			actualMessage := extractBotMessage(strings.ToLower(update.Message.Text))
-			response = b.aiService.SendMessage(actualMessage)
+			messageWithContext = append(messageWithContext, dto.Message{
+				Role:    "user",
+				Content: fmt.Sprintf("User: %d, MessageID: %d, NewMessage: %s", update.Message.From.ID, update.Message.MessageID, actualMessage),
+			})
+
+			response = b.aiService.SendMessage(messageWithContext)
 		}
 		break
 	}
@@ -226,4 +239,36 @@ func (b *Bot) saveNewMassage(update tgbotapi.Update, replyMessage string) error 
 	}
 
 	return nil
+}
+
+func (b *Bot) prepareNewMassage(ctx context.Context, chatID int64) []dto.Message {
+	messageContext, err := b.msInfoService.GetByChatID(ctx, chatID, 10)
+	if err != nil {
+		return nil
+	}
+
+	if len(messageContext) == 0 {
+		return nil
+	}
+
+	result := make([]dto.Message, 0, len(messageContext)+1) // +1 for the new message
+
+	for _, message := range messageContext {
+		var text string
+
+		if strings.Contains(message.Message, "Reply from message id") {
+			text = message.Message
+		} else {
+			text = fmt.Sprintf("User: %d, MessageID: %d, Text: %s", message.UserID, message.MessageID, text)
+		}
+
+		result = append(result, dto.Message{
+			Role:    "user",
+			Content: text,
+		})
+	}
+
+	logger.Info.Printf("%s", result)
+
+	return result
 }
