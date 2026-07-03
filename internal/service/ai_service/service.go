@@ -1,9 +1,12 @@
 package ai_service
 
-import "github.com/SelickSD/DemoBot.git/internal/config"
+import (
+	"github.com/SelickSD/DemoBot.git/internal/config"
+	"github.com/SelickSD/DemoBot.git/internal/repository/polza-ai-api/dto"
+)
 
 type AiRepo interface {
-	PostNewMassage(massage string) string
+	PostNewMassage(massage []dto.Message) string
 }
 
 type Service struct {
@@ -18,6 +21,6 @@ func NewService(cfg *config.Config, aiRepo AiRepo) *Service {
 	}
 }
 
-func (s *Service) SendMessage(massage string) string {
+func (s *Service) SendMessage(massage []dto.Message) string {
 	return s.aiRepo.PostNewMassage(massage)
 }
