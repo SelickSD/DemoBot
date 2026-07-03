@@ -126,12 +126,19 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 			}
 
 			actualMessage := extractBotMessage(strings.ToLower(update.Message.Text))
-			messageWithContext = append(messageWithContext, dto.Message{
-				Role:    "user",
-				Content: fmt.Sprintf("User: %d, MessageID: %d, NewMessage: %s", update.Message.From.ID, update.Message.MessageID, actualMessage),
-			})
+			if len(messageWithContext) == 0 {
+				response = b.aiService.SendMessage([]dto.Message{{
+					Role:    "user",
+					Content: fmt.Sprintf("User: %d, MessageID: %d, NewMessage: %s", update.Message.From.ID, update.Message.MessageID, actualMessage),
+				}})
+			} else {
+				messageWithContext = append(messageWithContext, dto.Message{
+					Role:    "user",
+					Content: fmt.Sprintf("User: %d, MessageID: %d, NewMessage: %s", update.Message.From.ID, update.Message.MessageID, actualMessage),
+				})
 
-			response = b.aiService.SendMessage(messageWithContext)
+				response = b.aiService.SendMessage(messageWithContext)
+			}
 		}
 		break
 	}
