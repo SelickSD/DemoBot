@@ -255,7 +255,7 @@ func (b *Bot) saveNewMassage(update tgbotapi.Update, replyMessage string) error 
 }
 
 func (b *Bot) prepareNewMassage(ctx context.Context, chatID int64) []dto.Message {
-	messageContext, err := b.msInfoService.GetByChatID(ctx, chatID, 20)
+	messageContext, err := b.msInfoService.GetByChatID(ctx, chatID, 10)
 	if err != nil {
 		return nil
 	}
