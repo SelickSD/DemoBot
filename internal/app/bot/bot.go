@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
@@ -92,7 +93,11 @@ func (b *Bot) start() {
 func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Info.Printf("Recovered from panic in handleUpdate: %v", r)
+			logger.Info.Printf(
+				"Recovered from panic in handleUpdate: %v\n%s",
+				r,
+				debug.Stack(),
+			)
 		}
 	}()
 

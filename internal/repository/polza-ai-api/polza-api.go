@@ -24,7 +24,7 @@ func NewAIApiKey(cfg config.Config) *AiApyClient {
 
 func (c *AiApyClient) PostNewMassage(massage []dto.Message) string {
 	request := dto.ChatRequest{
-		Model:       "openai/gpt-5.1-chat", //deepseek/deepseek-chat-v3.1
+		Model:       "openai/gpt-5.6-luna-pro", //deepseek/deepseek-chat-v3.1
 		Messages:    massage,
 		Temperature: 0.7,
 		MaxTokens:   1500,
@@ -34,6 +34,10 @@ func (c *AiApyClient) PostNewMassage(massage []dto.Message) string {
 	resp, err := createChatCompletion(c.cfg.AiApiKey, request)
 	if err != nil {
 		panic(err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return "Кажется что то пошло не так.. Надо звать Админов"
 	}
 
 	fmt.Printf("Ответ: %s\n", resp.Choices[0].Message.Content)
