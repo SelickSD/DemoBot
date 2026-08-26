@@ -7,6 +7,7 @@ import (
 	"github.com/SelickSD/DemoBot.git/internal/app/bot"
 	"github.com/SelickSD/DemoBot.git/internal/config"
 	db2 "github.com/SelickSD/DemoBot.git/internal/db"
+	"github.com/SelickSD/DemoBot.git/internal/repository/game_news_reports"
 	diversRepo "github.com/SelickSD/DemoBot.git/internal/repository/hell-divers"
 	msInfoRepo "github.com/SelickSD/DemoBot.git/internal/repository/messageinfo"
 	polzaApi "github.com/SelickSD/DemoBot.git/internal/repository/polza-ai-api"
@@ -35,10 +36,10 @@ func main() {
 	}
 
 	divers := diversRepo.NewRepository()
-	diversService := helldivers.NewService(cfg, divers)
-
 	aiApiClient := polzaApi.NewAIApiKey(*cfg)
+	newsRepo := game_news_reports.NewGameNewsReportsRepository(db2.Pool)
 	aiService := ai_service.NewService(cfg, aiApiClient)
+	diversService := helldivers.NewService(cfg, divers, newsRepo, aiApiClient)
 
 	messageInfoRepo := msInfoRepo.NewRepository()
 	messageInfoService := msInfoSvc.NewService(messageInfoRepo)

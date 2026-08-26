@@ -22,13 +22,13 @@ func NewAIApiKey(cfg config.Config) *AiApyClient {
 	}
 }
 
-func (c *AiApyClient) PostNewMassage(massage []dto.Message) string {
+func (c *AiApyClient) PostNewMassage(massage []dto.Message, prompt string) string {
 	request := dto.ChatRequest{
 		Model:       "openai/gpt-5.6-luna-pro", //deepseek/deepseek-chat-v3.1
 		Messages:    massage,
 		Temperature: 0.7,
 		MaxTokens:   1500,
-		Prompt:      "Общение ведется в Телеграмме, на русском языке, ответы нужно формировать в дружеской форме. Новое сообщение помечено как NewMessage, нужно ответить на него",
+		Prompt:      prompt,
 	}
 
 	resp, err := createChatCompletion(c.cfg.AiApiKey, request)

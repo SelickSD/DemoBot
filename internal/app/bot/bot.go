@@ -18,11 +18,11 @@ import (
 )
 
 type HellDiversService interface {
-	GetLatestNews() (string, error)
+	GetLatestNews(ctx context.Context) (string, error)
 }
 
 type AiService interface {
-	SendMessage(massage []dto.Message) string
+	SendMessage(massage []dto.Message, prompt string) string
 }
 
 type MessageService interface {
@@ -91,6 +91,8 @@ func (b *Bot) start() {
 }
 
 func (b *Bot) handleUpdate(update tgbotapi.Update) {
+	ctx := context.Background()
+
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Info.Printf(
@@ -111,8 +113,8 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	var err error
 
 	switch strings.ToLower(update.Message.Text) {
-	case "за демократию!", "/democracy":
-		response, err = b.handleDemocracyCommand()
+	case "за демократию!", "/democracy", "за супер землю!", "за супер-землю!":
+		response, err = b.handleDemocracyCommand(ctx)
 	case "/start", "/help":
 		response = b.handleHelpCommand()
 	case "delete all":
@@ -141,14 +143,14 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 				response = b.aiService.SendMessage([]dto.Message{{
 					Role:    "user",
 					Content: fmt.Sprintf("User: %d, MessageID: %d, NewMessage: %s", update.Message.From.ID, update.Message.MessageID, actualMessage),
-				}})
+				}}, "")
 			} else {
 				messageWithContext = append(messageWithContext, dto.Message{
 					Role:    "user",
 					Content: fmt.Sprintf("User: %d, MessageID: %d, NewMessage: %s", update.Message.From.ID, update.Message.MessageID, actualMessage),
 				})
 
-				response = b.aiService.SendMessage(messageWithContext)
+				response = b.aiService.SendMessage(messageWithContext, "")
 			}
 		}
 		break
@@ -161,7 +163,7 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 
 	if response != "" {
 		// Разбиваем сообщение, если оно слишком длинное
-		messages := splitMessage(response, 4096)
+		messages := splitMessage(response, 5110)
 		for _, msgText := range messages {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 			msg.ReplyToMessageID = update.Message.MessageID
@@ -180,8 +182,8 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	}
 }
 
-func (b *Bot) handleDemocracyCommand() (string, error) {
-	news, err := b.diversService.GetLatestNews()
+func (b *Bot) handleDemocracyCommand(ctx context.Context) (string, error) {
+	news, err := b.diversService.GetLatestNews(ctx)
 	if err != nil {
 		return "", err
 	}
